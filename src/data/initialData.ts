@@ -13,6 +13,7 @@ export const initialClubSettings: ClubSettings = {
   contactEmail: 'operations@raqfc.com',
   contactPhone: '+44 161 792 4000',
   crestUrl: '/rpm_logo.jpg',
+  staffRegistrarAdminId: 'adm-1',
 };
 
 export const initialPlayers: Player[] = [
@@ -40,6 +41,15 @@ export const initialPlayers: Player[] = [
     agentName: 'Apex Football Agency',
     agentContact: 'info@apexfootball.com',
     bio: 'Dynamic, explosive center forward with elite aerial prowess, lightning turn of pace, and composed finishing inside the 18-yard box. Proven track record in domestic cups and continental competitions.',
+    cvDocument: {
+      id: 'cv-doc-1',
+      fileName: 'Tariq_Al-Mansoor_Official_Career_CV.pdf',
+      fileSize: 348160,
+      fileType: 'application/pdf',
+      dataUrl: 'data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRmlsdGVyIC9GbGF0ZURlY29kZSA+PgpzdHJlYW0KeAErVAhUKC5JLCktSssvUrBVyM0vKqkEMlISixWKS/KLS8CKFdw1NAy0DI20DIz0DAxNzQwMjUz0TCwMjc0NgQIAmO8PdwplbmRzdHJlYW0KZW5kb2JqCg==',
+      uploadedAt: '2024-07-02',
+      notes: 'Official Verified Career Dossier & Executive Bio Document',
+    },
     youthClub: 'Rabat Youth Academy',
     careerHistory: [
       {

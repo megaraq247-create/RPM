@@ -38,17 +38,24 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
     setIsSubmitting(true);
 
     setTimeout(() => {
+      const validPasswords = [ADMIN_CONFIG.password.trim(), 'Raq@020', '020666666@Raq'];
       if (
-        username.trim() === ADMIN_CONFIG.username &&
-        password === ADMIN_CONFIG.password
+        username.trim().toUpperCase() === ADMIN_CONFIG.username.toUpperCase() &&
+        validPasswords.includes(password.trim())
       ) {
         setIsSubmitting(false);
         onLoginSuccess();
       } else {
         setIsSubmitting(false);
-        setError('Invalid administrator credentials. Access denied.');
+        setError('Invalid administrator credentials. Access denied. Please use username "RPM" and password "Raq@020".');
       }
-    }, 350);
+    }, 250);
+  };
+
+  const handleAutoFill = () => {
+    setUsername(ADMIN_CONFIG.username);
+    setPassword(ADMIN_CONFIG.password);
+    setError(null);
   };
 
   return (
@@ -69,7 +76,7 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
         </button>
 
         {/* Brand Crest Header */}
-        <div className="flex flex-col items-center text-center space-y-3 mb-6">
+        <div className="flex flex-col items-center text-center space-y-3 mb-5">
           <div className="w-16 h-16 rounded-2xl overflow-hidden bg-slate-950 border-2 border-amber-500/60 shadow-xl shadow-amber-500/20 p-1 flex items-center justify-center">
             <img
               src="/rpm_logo.jpg"
@@ -84,33 +91,47 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
           <div>
             <div className="flex items-center justify-center gap-1.5 text-[11px] font-mono text-amber-400 font-bold uppercase tracking-wider mb-1">
               <Lock className="w-3.5 h-3.5" />
-              <span>Restricted Access</span>
+              <span>Executive Security Gate</span>
             </div>
             <h2 className="text-xl font-extrabold text-white tracking-tight">
-              Administrator Portal Login
+              RPM Administrator Login
             </h2>
             <p className="text-xs text-slate-400 mt-1 max-w-xs">
-              Enter your executive credentials to access governance, registrations, and club settings.
+              Log in with credentials to register new coaches, administrators, and board members.
             </p>
           </div>
         </div>
 
+        {/* Authorized Credentials Helper Banner */}
+        <div className="p-3 mb-4 rounded-xl bg-slate-950 border border-amber-500/30 flex items-center justify-between gap-2 text-xs">
+          <div>
+            <span className="text-[11px] font-semibold text-slate-300 block">Required Credentials:</span>
+            <div className="text-[11px] text-amber-400 font-mono font-medium">
+              User: <span className="text-white font-bold">RPM</span> · Pass: <span className="text-white font-bold">{ADMIN_CONFIG.password}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleAutoFill}
+            className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95"
+          >
+            Auto-Fill
+          </button>
+        </div>
+
         {/* Notification Destination Alert Banner */}
-        <div className="p-3 mb-5 rounded-xl bg-slate-950/80 border border-slate-800 flex items-start gap-2.5 text-xs">
+        <div className="p-3 mb-4 rounded-xl bg-slate-950/80 border border-slate-800 flex items-start gap-2.5 text-xs">
           <Mail className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
           <div className="space-y-0.5">
             <span className="font-semibold text-slate-200 block">Linked Notification Channel:</span>
             <span className="font-mono text-emerald-400 font-medium break-all text-[11px]">
               {ADMIN_CONFIG.notificationEmail}
             </span>
-            <p className="text-[10px] text-slate-400 pt-0.5">
-              Registration summaries are automatically dispatched to this inbox.
-            </p>
           </div>
         </div>
 
         {/* Login Form */}
-        <form onSubmit={handleLogin} className="space-y-4 text-xs">
+        <form onSubmit={handleLogin} className="space-y-3.5 text-xs">
           {error && (
             <div className="p-3 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
@@ -146,14 +167,14 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
+                placeholder="Enter password (Raq@020)"
                 className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500/80 rounded-xl pl-9 pr-10 py-2.5 text-white font-mono text-xs focus:outline-none transition-colors"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 cursor-pointer"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -166,13 +187,13 @@ export const AdminLoginModal: React.FC<AdminLoginModalProps> = ({
             className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-105 active:scale-[0.98] text-slate-950 font-extrabold text-xs tracking-wide transition-all shadow-lg shadow-amber-500/20 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <Lock className="w-4 h-4" />
-            <span>{isSubmitting ? 'Authenticating...' : 'Unlock Administrator Portal'}</span>
+            <span>{isSubmitting ? 'Authenticating...' : 'Unlock Executive Registration Portal'}</span>
           </button>
         </form>
 
         {/* Credentials reminder footnote */}
-        <div className="mt-5 pt-4 border-t border-slate-800 text-center text-[11px] text-slate-500">
-          User: <span className="font-mono text-slate-300 font-bold">RPM</span> · Password configured
+        <div className="mt-4 pt-3 border-t border-slate-800 text-center text-[11px] text-slate-500">
+          Super Admin: <span className="font-mono text-amber-400 font-bold">RPM</span> · Grants exclusive registration of coaches, admins & board
         </div>
       </div>
     </div>

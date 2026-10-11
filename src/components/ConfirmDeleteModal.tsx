@@ -2,13 +2,15 @@ import React from 'react';
 import { Trash2, AlertTriangle, X } from 'lucide-react';
 
 export interface DeleteTarget {
-  type: 'player' | 'admin' | 'staff';
+  type: 'player' | 'admin' | 'staff' | 'staff_batch';
   id: string;
   name: string;
   subtitle?: string;
   avatarUrl?: string;
   identifier?: string;
   extraInfo?: string;
+  batchIds?: string[];
+  count?: number;
 }
 
 interface ConfirmDeleteModalProps {
@@ -26,6 +28,12 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
 }) => {
   if (!isOpen || !target) return null;
 
+  const isCoach = target.type === 'staff' && (
+    target.subtitle?.toLowerCase().includes('coach') ||
+    target.name.toLowerCase().includes('coach') ||
+    target.extraInfo?.toLowerCase().includes('coach')
+  );
+
   const getTitle = () => {
     switch (target.type) {
       case 'player':
@@ -33,7 +41,9 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
       case 'admin':
         return 'Remove Administrator';
       case 'staff':
-        return 'Remove Staff Member';
+        return isCoach ? 'Delete Coach Records' : 'Remove Staff Member';
+      case 'staff_batch':
+        return `Delete ${target.count || 'Selected'} Coaches & Staff Members`;
     }
   };
 
@@ -42,9 +52,13 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
       case 'player':
         return 'Are you sure you want to permanently delete this player? All dossier details, match photos, highlight videos, attributes, and career records will be completely removed from the club roster.';
       case 'admin':
-        return 'Are you sure you want to revoke administrative access and delete this administrator? This action is authorized under Executive CEO authority.';
+        return 'Are you sure you want to delete this administrator and revoke all administrative credentials? If this administrator is the current CEO, leadership will automatically transition to the next ranking administrator.';
       case 'staff':
-        return 'Are you sure you want to remove this staff member and revoke their coaching or operational credentials?';
+        return isCoach
+          ? `Are you sure you want to permanently delete coach ${target.name}? All coaching tactical assignments, assigned squad duties, and staff records will be removed from the club roster.`
+          : `Are you sure you want to permanently remove ${target.name} and revoke their medical, analysis, or operational credentials from club records?`;
+      case 'staff_batch':
+        return `Are you sure you want to permanently delete all ${target.count || 'selected'} coaches and staff members from club records? This action cannot be reversed.`;
     }
   };
 
@@ -55,14 +69,19 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
       case 'admin':
         return 'Yes, Delete Administrator';
       case 'staff':
-        return 'Yes, Remove Staff';
+        return isCoach ? 'Yes, Delete Coach' : 'Yes, Delete Staff Member';
+      case 'staff_batch':
+        return `Yes, Delete All Selected (${target.count})`;
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+    <div 
+      className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in"
+      onClick={onClose}
+    >
       <div 
-        className="w-full max-w-md bg-slate-900 border border-rose-500/30 rounded-2xl p-6 shadow-2xl space-y-5"
+        className="w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-2xl p-6 shadow-2xl space-y-5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -87,7 +106,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
 
         {/* Entity Card Preview */}
         <div className="p-3.5 bg-slate-950/70 border border-slate-800 rounded-xl flex items-center gap-3.5">
-          {target.avatarUrl && (
+          {target.avatarUrl ? (
             <img
               src={target.avatarUrl}
               alt={target.name}
@@ -96,6 +115,10 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                 (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
               }}
             />
+          ) : (
+            <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+              <Trash2 className="w-6 h-6" />
+            </div>
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

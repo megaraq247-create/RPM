@@ -81,6 +81,16 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
   const activeAdmin = administrators.find(a => a.id === activeAdminId) || ceoAdmin || administrators[0];
   const isCurrentActiveCEO = activeAdmin ? isRoleCEO(activeAdmin.role) : false;
 
+  // Single authorized staff registrar
+  const currentStaffRegistrar = administrators.find(a => a.id === clubSettings.staffRegistrarAdminId) || ceoAdmin || administrators[0];
+
+  const handleStaffRegistrarChange = (newAdminId: string) => {
+    onUpdateClubSettings({
+      ...clubSettings,
+      staffRegistrarAdminId: newAdminId,
+    });
+  };
+
   // Move administrator up or down in hierarchy order (only CEO can perform)
   const handleMoveAdmin = (index: number, direction: 'up' | 'down') => {
     if (!isCurrentActiveCEO) {
@@ -120,10 +130,7 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
   const handleAdminAvatarFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Photo size exceeds 10MB limit.');
-      return;
-    }
+    if (file.size > 10 * 1024 * 1024) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       const res = event.target?.result as string;
@@ -135,10 +142,7 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
   const handleDirectAdminPhotoUpload = (admin: Administrator, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Photo size exceeds 10MB limit.');
-      return;
-    }
+    if (file.size > 10 * 1024 * 1024) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       const res = event.target?.result as string;
@@ -305,25 +309,14 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
 
         <div className="flex items-center gap-2.5">
           {activeTab === 'admins' && (
-            isCurrentActiveCEO ? (
-              <button
-                onClick={openAddModal}
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-bold text-xs rounded-lg transition-colors shadow-md shadow-amber-500/20 cursor-pointer"
-                title="Appoint and assign a new administrator (CEO Prerogative)"
-              >
-                <Crown className="w-4 h-4 text-slate-950" />
-                <span>Assign Administrator</span>
-              </button>
-            ) : (
-              <button
-                disabled
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-slate-800 text-slate-500 font-semibold text-xs rounded-lg cursor-not-allowed border border-slate-700/60"
-                title="Executive Restriction: Only the Chief Executive Officer (CEO) can assign administrators"
-              >
-                <Lock className="w-3.5 h-3.5 text-slate-500" />
-                <span>Assign Admin (CEO Only)</span>
-              </button>
-            )
+            <button
+              onClick={openAddModal}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-105 active:scale-95 text-slate-950 font-extrabold text-xs rounded-lg transition-all shadow-md shadow-amber-500/20 cursor-pointer"
+              title="Register a new Administrator or Board Member"
+            >
+              <UserPlus className="w-4 h-4 text-slate-950" />
+              <span>Register Administrator & Board</span>
+            </button>
           )}
 
           <button
@@ -467,6 +460,50 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
             </div>
           </div>
 
+          {/* Exclusive Staff Registrar Mandate Panel */}
+          <div className="p-4 bg-slate-900/90 rounded-xl border border-emerald-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg shadow-black/20">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                <Shield className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Staff Registration Mandate Policy
+                  </h4>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-semibold">
+                    1 Administrator Rule
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Only one administrator has mandate to register coaches & technical staff. Currently appointed:{' '}
+                  <strong className="text-emerald-300 font-semibold">{currentStaffRegistrar?.fullName} ({currentStaffRegistrar?.role})</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-stretch md:self-auto justify-end shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-800">
+              <label className="text-[11px] text-slate-400 whitespace-nowrap font-medium">Designate Registrar:</label>
+              <select
+                value={clubSettings.staffRegistrarAdminId || ceoAdmin?.id || ''}
+                onChange={(e) => handleStaffRegistrarChange(e.target.value)}
+                disabled={!isCurrentActiveCEO}
+                className={`bg-slate-950 border text-xs rounded-lg px-2.5 py-1.5 font-medium transition-colors ${
+                  isCurrentActiveCEO
+                    ? 'border-emerald-500/40 text-emerald-300 focus:outline-none focus:border-emerald-400 cursor-pointer'
+                    : 'border-slate-800 text-slate-500 cursor-not-allowed'
+                }`}
+                title={isCurrentActiveCEO ? 'Select administrator authorized to register staff' : 'Only the CEO can reassign staff registrar authority'}
+              >
+                {administrators.map((adm) => (
+                  <option key={adm.id} value={adm.id}>
+                    {adm.fullName} ({adm.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Administrators Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {administrators.map((admin, index) => (
@@ -585,38 +622,24 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
                       </label>
                       <button
                         onClick={() => openEditModal(admin)}
-                        className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-slate-300 hover:text-white rounded-lg bg-slate-800/80 hover:bg-slate-700 transition-colors cursor-pointer text-xs font-semibold"
                         title="Edit admin profile"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
+                        <span>Edit</span>
                       </button>
 
-                      {/* Deletion of administrators: Only the CEO can delete administrators */}
-                      {isCurrentActiveCEO ? (
-                        !isRoleCEO(admin.role) ? (
-                          <button
-                            onClick={() => onDeleteAdmin(admin.id)}
-                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                            title="Delete administrator credentials (CEO Prerogative)"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        ) : (
-                          <span
-                            className="p-1.5 text-slate-600 cursor-not-allowed"
-                            title="CEO account is protected and cannot be deleted"
-                          >
-                            <Crown className="w-3.5 h-3.5 text-amber-500/40" />
-                          </span>
-                        )
-                      ) : (
-                        <span
-                          className="p-1.5 text-slate-600 cursor-not-allowed"
-                          title="Restricted: Only the CEO can delete administrators"
-                        >
-                          <Lock className="w-3.5 h-3.5" />
-                        </span>
-                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteAdmin(admin.id);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-rose-300 bg-rose-500/20 hover:bg-rose-600 hover:text-white border border-rose-500/40 rounded-lg transition-colors cursor-pointer text-xs font-bold shadow-sm active:scale-95"
+                        title={`Delete administrator: ${admin.fullName}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-400 group-hover:text-white" />
+                        <span>Delete</span>
+                      </button>
                     </div>
                   </div>
 
@@ -959,7 +982,7 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
               <div className="flex items-center gap-2">
                 <Crown className="w-4 h-4 text-amber-400" />
                 <h3 className="text-base font-bold text-white">
-                  {editingAdmin ? `Edit Admin: ${editingAdmin.fullName}` : 'Assign Administrator (CEO Prerogative)'}
+                  {editingAdmin ? `Edit: ${editingAdmin.fullName}` : 'Register New Administrator or Board Member'}
                 </h3>
               </div>
               <button 
@@ -983,19 +1006,27 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1">Executive Role</label>
+                  <label className="block text-slate-400 mb-1">Executive / Board Role</label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value as AdminRole)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-medium"
                   >
-                    <option value="Chief Executive Officer (CEO)">Chief Executive Officer (CEO)</option>
-                    <option value="Sporting Director">Sporting Director</option>
-                    <option value="Club President">Club President</option>
-                    <option value="Head of Registrations">Head of Registrations</option>
-                    <option value="Secretary General">Secretary General</option>
-                    <option value="Chief Operations Officer">Chief Operations Officer</option>
-                    <option value="Legal Officer">Legal Officer</option>
+                    <optgroup label="Board of Directors">
+                      <option value="Board Chairman">Board Chairman</option>
+                      <option value="Executive Board Director">Executive Board Director</option>
+                      <option value="Board Member">Board Member</option>
+                      <option value="Club President">Club President</option>
+                      <option value="Vice President">Vice President</option>
+                    </optgroup>
+                    <optgroup label="Club Administration & Executive">
+                      <option value="Chief Executive Officer (CEO)">Chief Executive Officer (CEO)</option>
+                      <option value="Sporting Director">Sporting Director</option>
+                      <option value="Head of Registrations">Head of Registrations</option>
+                      <option value="Secretary General">Secretary General</option>
+                      <option value="Chief Operations Officer">Chief Operations Officer</option>
+                      <option value="Legal Officer">Legal Officer</option>
+                    </optgroup>
                   </select>
                 </div>
               </div>
@@ -1113,20 +1144,36 @@ export const AdminSection: React.FC<AdminSectionProps> = ({
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold hover:bg-slate-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-emerald-500 text-slate-950 font-bold rounded-lg hover:bg-emerald-400 cursor-pointer"
-                >
-                  {editingAdmin ? 'Update Administrator' : 'Create Administrator'}
-                </button>
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800">
+                {editingAdmin ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      onDeleteAdmin(editingAdmin.id);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Delete Administrator / Board</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg font-semibold hover:bg-slate-700"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-emerald-500 text-slate-950 font-bold rounded-lg hover:bg-emerald-400 cursor-pointer shadow-md"
+                  >
+                    {editingAdmin ? 'Update Administrator / Board Member' : 'Register Administrator / Board Member'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

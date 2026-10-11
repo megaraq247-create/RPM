@@ -106,7 +106,7 @@ export const getStatusBadge = (status: string): { dot: string; text: string; lab
 
 export const ADMIN_CONFIG = {
   username: 'RPM',
-  password: '020666666@Raq',
+  password: 'Raq@020',
   notificationEmail: 'raqplayamanagentagn@gmail.com',
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   X, 
   Printer, 
@@ -22,9 +22,14 @@ import {
   TrendingUp,
   Sliders,
   FileCheck,
-  CheckCircle2
+  CheckCircle2,
+  Laptop,
+  Upload,
+  Download,
+  FileText,
+  Edit3
 } from 'lucide-react';
-import { Player, PlayerMediaPhoto, PlayerMediaVideo } from '../types';
+import { Player, PlayerMediaPhoto, PlayerMediaVideo, PlayerCvDocument } from '../types';
 import { formatCurrency, calculateAge, getPositionColor, getStatusBadge } from '../utils/helpers';
 
 interface PlayerDossierModalProps {
@@ -37,6 +42,7 @@ interface PlayerDossierModalProps {
   onAddVideo: (playerId: string, video: PlayerMediaVideo) => void;
   onDeletePhoto: (playerId: string, photoId: string) => void;
   onDeleteVideo: (playerId: string, videoId: string) => void;
+  onUpdateCvDocument?: (playerId: string, cvDoc: PlayerCvDocument, newBio?: string) => void;
 }
 
 export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
@@ -49,6 +55,7 @@ export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
   onAddVideo,
   onDeletePhoto,
   onDeleteVideo,
+  onUpdateCvDocument,
 }) => {
   const [activeTab, setActiveTab] = useState<'cv' | 'media' | 'attributes' | 'medical'>('cv');
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
@@ -65,6 +72,10 @@ export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
 
   const [selectedPhotoPreview, setSelectedPhotoPreview] = useState<string | null>(null);
 
+  const cvFileInputRef = useRef<HTMLInputElement>(null);
+  const [cvUploadFeedback, setCvUploadFeedback] = useState<string | null>(null);
+  const [isDraggingCv, setIsDraggingCv] = useState(false);
+
   if (!player) return null;
 
   const posStyle = getPositionColor(player.primaryPosition);
@@ -74,6 +85,85 @@ export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
   const totalAppearances = player.careerHistory.reduce((sum, c) => sum + c.appearances, 0);
   const totalGoals = player.careerHistory.reduce((sum, c) => sum + c.goals, 0);
   const totalAssists = player.careerHistory.reduce((sum, c) => sum + c.assists, 0);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const handleProcessCvFile = (file: File) => {
+    if (!file || !player) return;
+
+    const isTextFile = file.type.startsWith('text/') || 
+                       file.name.endsWith('.txt') || 
+                       file.name.endsWith('.md') || 
+                       file.name.endsWith('.rtf');
+
+    const handleDataUrl = (dataUrl: string, text?: string) => {
+      const cvDoc: PlayerCvDocument = {
+        id: `cv-doc-${Date.now()}`,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type || 'application/octet-stream',
+        dataUrl,
+        uploadedAt: new Date().toISOString().split('T')[0],
+        extractedText: text,
+      };
+
+      let newBio = player.bio;
+      if (text && text.trim()) {
+        newBio = text.trim();
+      } else if (!player.bio || player.bio.includes('Talented modern footballer')) {
+        newBio = `Official verified Career CV and Executive Player Profile for ${player.displayName}. Document "${file.name}" uploaded from PC containing comprehensive match logs, performance metrics, and career history.`;
+      }
+
+      if (onUpdateCvDocument) {
+        onUpdateCvDocument(player.id, cvDoc, newBio);
+      }
+      setCvUploadFeedback(`Uploaded "${file.name}" (${formatFileSize(file.size)}) from PC successfully.`);
+    };
+
+    if (isTextFile) {
+      const textReader = new FileReader();
+      textReader.onload = (e) => {
+        const extractedText = e.target?.result as string;
+        const dataReader = new FileReader();
+        dataReader.onload = (ev) => {
+          handleDataUrl(ev.target?.result as string, extractedText);
+        };
+        dataReader.readAsDataURL(file);
+      };
+      textReader.readAsText(file);
+    } else {
+      const dataReader = new FileReader();
+      dataReader.onload = (ev) => {
+        handleDataUrl(ev.target?.result as string);
+      };
+      dataReader.readAsDataURL(file);
+    }
+  };
+
+  const handleCvInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleProcessCvFile(file);
+  };
+
+  const handleCvDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingCv(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleProcessCvFile(file);
+  };
+
+  const handleDownloadCvDocument = (doc: PlayerCvDocument) => {
+    const link = document.createElement('a');
+    link.href = doc.dataUrl;
+    link.download = doc.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -335,14 +425,146 @@ export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
           {/* TAB 1: CV, Career History & Honours */}
           {(activeTab === 'cv' || window.matchMedia?.('print').matches) && (
             <div className="space-y-6">
-              {/* Executive Bio */}
+              {/* Hidden file input for PC CV upload */}
+              <input
+                type="file"
+                ref={cvFileInputRef}
+                onChange={handleCvInputChange}
+                accept=".pdf,.doc,.docx,.txt,.rtf,.md"
+                className="hidden"
+              />
+
+              {/* Upload Feedback */}
+              {cvUploadFeedback && (
+                <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs no-print">
+                  <div className="flex items-center gap-2">
+                    <FileCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>{cvUploadFeedback}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCvUploadFeedback(null)}
+                    className="text-emerald-400 hover:text-white font-bold px-1.5"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+
+              {/* Official Attached CV Document Card (Uploaded from PC) */}
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-emerald-400" />
+                    <span className="font-bold text-white text-xs uppercase tracking-wider">
+                      Official Player CV Document & Executive File
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 no-print">
+                    <button
+                      type="button"
+                      onClick={() => cvFileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      <Laptop className="w-3.5 h-3.5" />
+                      <span>{player.cvDocument ? 'Upload New / Replace from PC' : 'Upload CV from PC'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {player.cvDocument ? (
+                  <div className="p-3.5 rounded-xl bg-slate-900 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-xs uppercase shrink-0 border ${
+                        player.cvDocument.fileName.endsWith('.pdf')
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          : player.cvDocument.fileName.match(/\.docx?$/i)
+                          ? 'bg-sky-500/20 text-sky-300 border-sky-500/40'
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      }`}>
+                        {player.cvDocument.fileName.endsWith('.pdf') ? 'PDF' : player.cvDocument.fileName.match(/\.docx?$/i) ? 'DOC' : 'TXT'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-white text-xs truncate max-w-[240px] sm:max-w-md">
+                            {player.cvDocument.fileName}
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold border border-emerald-500/30">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Attached from PC</span>
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
+                          Size: <span className="text-slate-200 font-mono">{formatFileSize(player.cvDocument.fileSize)}</span> · Uploaded: <span className="text-slate-300">{player.cvDocument.uploadedAt}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 no-print">
+                      <button
+                        type="button"
+                        onClick={() => player.cvDocument && handleDownloadCvDocument(player.cvDocument)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition-colors cursor-pointer shadow-sm"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Download CV</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => cvFileInputRef.current?.click()}
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors"
+                        title="Upload replacement CV from PC"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onDragOver={(e) => { e.preventDefault(); setIsDraggingCv(true); }}
+                    onDragLeave={() => setIsDraggingCv(false)}
+                    onDrop={handleCvDrop}
+                    onClick={() => cvFileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all no-print ${
+                      isDraggingCv 
+                        ? 'border-emerald-400 bg-emerald-500/10' 
+                        : 'border-slate-800 hover:border-slate-700 bg-slate-900/40 hover:bg-slate-900/70'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center justify-center gap-1">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-1">
+                        <Upload className="w-4 h-4" />
+                      </div>
+                      <div className="text-xs font-semibold text-white">
+                        Click to upload official CV document from your PC
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Supports PDF, Word (.docx, .doc), and Text files directly from your computer
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Executive Bio / Profile Summary */}
               <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 text-xs leading-relaxed text-slate-300">
-                <span className="font-semibold text-emerald-400 block mb-1 uppercase tracking-wider text-[11px]">
-                  Player Profile Summary:
-                </span>
-                {player.bio}
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-semibold text-emerald-400 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Player Profile Summary / CV Executive Bio</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onEdit(player)}
+                    className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium inline-flex items-center gap-1 no-print"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>Edit Bio</span>
+                  </button>
+                </div>
+                <p className="whitespace-pre-line">{player.bio}</p>
                 {player.youthClub && (
-                  <div className="mt-2 pt-2 border-t border-slate-800/80 text-slate-400 text-[11px]">
+                  <div className="mt-2.5 pt-2 border-t border-slate-800/80 text-slate-400 text-[11px]">
                     Youth Academy / Roots: <strong className="text-slate-200">{player.youthClub}</strong>
                   </div>
                 )}

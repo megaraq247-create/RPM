@@ -90,6 +90,7 @@ export interface Player {
 
   // CV & Career Data
   bio: string;
+  cvDocument?: PlayerCvDocument;
   youthClub?: string;
   careerHistory: CareerRecord[];
   trophies: PlayerTrophy[];
@@ -103,6 +104,17 @@ export interface Player {
 
   registeredAt: string;
   updatedAt: string;
+}
+
+export interface PlayerCvDocument {
+  id: string;
+  fileName: string;
+  fileSize: number; // in bytes
+  fileType: string; // e.g. "application/pdf"
+  dataUrl: string; // base64 / data URL
+  uploadedAt: string;
+  extractedText?: string;
+  notes?: string;
 }
 
 export type StaffCategory = 'Coaching' | 'Medical & Fitness' | 'Scouting & Analysis' | 'Operations & Kit';
@@ -128,6 +140,10 @@ export interface StaffMember {
 export type AdminRole = 
   | 'Chief Executive Officer (CEO)'
   | 'Club President' 
+  | 'Board Chairman'
+  | 'Board Member'
+  | 'Executive Board Director'
+  | 'Vice President'
   | 'Sporting Director' 
   | 'Secretary General' 
   | 'Head of Registrations' 
@@ -183,4 +199,5 @@ export interface ClubSettings {
   contactEmail: string;
   contactPhone: string;
   crestUrl: string;
+  staffRegistrarAdminId?: string; // Designated single administrator with exclusive authority to register staff
 }

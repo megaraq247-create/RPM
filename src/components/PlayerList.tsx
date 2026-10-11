@@ -264,8 +264,13 @@ export const PlayerList: React.FC<PlayerListProps> = ({
                               <div className="font-bold text-white text-xs hover:text-emerald-400 cursor-pointer" onClick={() => onViewDossier(player)}>
                                 {player.displayName}
                               </div>
-                              <div className="font-mono text-[10px] text-slate-500">
-                                {player.registrationNumber}
+                              <div className="font-mono text-[10px] text-slate-500 flex items-center gap-1.5">
+                                <span>{player.registrationNumber}</span>
+                                {player.cvDocument && (
+                                  <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30" title={`CV Attached: ${player.cvDocument.fileName}`}>
+                                    CV Doc
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>

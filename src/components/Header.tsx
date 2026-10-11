@@ -125,8 +125,8 @@ export const Header: React.FC<HeaderProps> = ({
             {isAdminLoggedIn ? (
               <button
                 onClick={() => setCurrentTab('admins')}
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-xs font-semibold cursor-pointer hover:bg-amber-500/25 transition-colors"
-                title="Super Administrator session active"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 font-mono text-xs font-semibold cursor-pointer hover:bg-amber-500/25 transition-colors"
+                title="Super Administrator session active (RPM)"
               >
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-400" />
                 <span>RPM (Admin)</span>
@@ -134,11 +134,11 @@ export const Header: React.FC<HeaderProps> = ({
             ) : (
               <button
                 onClick={onOpenAdminLogin}
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-amber-400 text-xs font-semibold transition-colors cursor-pointer"
-                title="Log in as Administrator"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-amber-400 text-xs font-semibold transition-colors cursor-pointer"
+                title="Log in with user 'RPM' and password"
               >
-                <Lock className="w-3.5 h-3.5" />
-                <span>Admin Login</span>
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span>RPM Login</span>
               </button>
             )}
 

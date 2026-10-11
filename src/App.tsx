@@ -20,11 +20,13 @@ import {
   Player, 
   StaffMember, 
   Administrator, 
+  AdminRole,
   ClubSettings, 
   ActivityLog, 
   PlayerMediaVideo,
   PlayerMediaPhoto,
-  EmailNotification
+  EmailNotification,
+  PlayerCvDocument
 } from './types';
 import { 
   initialPlayers, 
@@ -100,6 +102,24 @@ export default function App() {
     return localStorage.getItem('raq_admin_logged_in') === 'true';
   });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // Active Administrator Session & Staff Registrar Mandate
+  const [activeAdminId, setActiveAdminId] = useState<string>(() => {
+    return localStorage.getItem('raq_active_admin_id') || 'adm-1';
+  });
+
+  const activeAdmin = administrators.find(a => a.id === activeAdminId) || administrators[0];
+  const staffRegistrarId = clubSettings.staffRegistrarAdminId || administrators.find(a => a.role.toLowerCase().includes('ceo'))?.id || administrators[0]?.id || 'adm-1';
+  const staffRegistrar = administrators.find(a => a.id === staffRegistrarId) || administrators[0];
+
+  const handleSwitchActiveAdmin = (newAdminId: string) => {
+    setActiveAdminId(newAdminId);
+    localStorage.setItem('raq_active_admin_id', newAdminId);
+    const target = administrators.find(a => a.id === newAdminId);
+    if (target) {
+      showToast(`Switched active session to: ${target.fullName} (${target.role})`);
+    }
+  };
 
   // Email notifications outbox state
   const [emailNotifications, setEmailNotifications] = useState<EmailNotification[]>(() => {
@@ -245,6 +265,30 @@ export default function App() {
     setPlayerToEdit(null);
   };
 
+  const handleUpdatePlayerCv = (playerId: string, cvDoc: PlayerCvDocument, newBio?: string) => {
+    setPlayers(prev => {
+      const updated = prev.map(p => {
+        if (p.id === playerId) {
+          const updatedPlayer = {
+            ...p,
+            cvDocument: cvDoc,
+            bio: newBio ? newBio : p.bio,
+            updatedAt: new Date().toISOString().split('T')[0],
+          };
+          if (selectedDossierPlayer?.id === playerId) {
+            setSelectedDossierPlayer(updatedPlayer);
+          }
+          return updatedPlayer;
+        }
+        return p;
+      });
+      localStorage.setItem('raq_players', JSON.stringify(updated));
+      return updated;
+    });
+    logActivity('CV Document Uploaded', 'Player', `Uploaded official CV document (${cvDoc.fileName}) from PC for player.`);
+    showToast(`Uploaded CV "${cvDoc.fileName}" from PC successfully!`);
+  };
+
   const handleRequestDeletePlayer = (playerId: string) => {
     const target = players.find(p => p.id === playerId);
     if (!target) return;
@@ -356,6 +400,7 @@ export default function App() {
   const handleRequestDeleteStaff = (staffId: string) => {
     const target = staffMembers.find(s => s.id === staffId);
     if (!target) return;
+    const isCoach = target.category === 'Coaching' || target.role.toLowerCase().includes('coach');
     setDeleteTarget({
       type: 'staff',
       id: target.id,
@@ -363,7 +408,32 @@ export default function App() {
       subtitle: `${target.role} · ${target.category}`,
       identifier: target.staffId,
       avatarUrl: target.avatarUrl,
-      extraInfo: `Squad: ${target.squadAssigned} · License: ${target.license}`,
+      extraInfo: target.license
+        ? `Squad: ${target.squadAssigned} · License: ${target.license}`
+        : `Squad: ${target.squadAssigned} · Nationality: ${target.nationality}`,
+    });
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleRequestDeleteMultipleStaff = (staffIds: string[]) => {
+    if (staffIds.length === 0) return;
+    if (staffIds.length === 1) {
+      handleRequestDeleteStaff(staffIds[0]);
+      return;
+    }
+    const selectedStaff = staffMembers.filter(s => staffIds.includes(s.id));
+    const names = selectedStaff.map(s => s.fullName).slice(0, 3).join(', ');
+    const moreText = selectedStaff.length > 3 ? ` and ${selectedStaff.length - 3} others` : '';
+
+    setDeleteTarget({
+      type: 'staff_batch',
+      id: 'batch-staff',
+      name: `${selectedStaff.length} Coaches & Staff Members`,
+      subtitle: `${names}${moreText}`,
+      identifier: `${selectedStaff.length} Records Selected`,
+      batchIds: staffIds,
+      count: selectedStaff.length,
+      extraInfo: 'Selected coaches and operations staff will be permanently removed from club records.',
     });
     setIsDeleteModalOpen(true);
   };
@@ -384,22 +454,17 @@ export default function App() {
   const handleRequestDeleteAdmin = (adminId: string) => {
     const target = administrators.find(a => a.id === adminId);
     if (!target) return;
-    if (target.role.toLowerCase().includes('ceo') || target.role.toLowerCase().includes('chief executive')) {
-      showToast("CEO Account Protected: The Chief Executive Officer account cannot be removed.");
-      return;
-    }
-    if (administrators.length <= 1) {
-      showToast("At least one administrator must remain active in the system.");
-      return;
-    }
+    const isCEO = target.role.toLowerCase().includes('ceo') || target.role.toLowerCase().includes('chief executive');
     setDeleteTarget({
       type: 'admin',
       id: target.id,
       name: target.fullName,
-      subtitle: `${target.role} · ${target.department}`,
+      subtitle: isCEO 
+        ? `${target.role} · Executive Leadership will transfer upon removal` 
+        : `${target.role} · ${target.department}`,
       identifier: target.adminId,
       avatarUrl: target.avatarUrl,
-      extraInfo: `Clearance: ${target.accessLevel}`,
+      extraInfo: `Security Clearance: ${target.accessLevel}`,
     });
     setIsDeleteModalOpen(true);
   };
@@ -419,7 +484,11 @@ export default function App() {
 
     if (deleteTarget.type === 'player') {
       const targetId = deleteTarget.id;
-      setPlayers(prev => prev.filter(p => p.id !== targetId));
+      setPlayers(prev => {
+        const updated = prev.filter(p => p.id !== targetId);
+        localStorage.setItem('raq_players', JSON.stringify(updated));
+        return updated;
+      });
       if (selectedDossierPlayer?.id === targetId) {
         setSelectedDossierPlayer(null);
       }
@@ -427,14 +496,91 @@ export default function App() {
       showToast(`Permanently deleted player: ${deleteTarget.name}`);
     } else if (deleteTarget.type === 'admin') {
       const targetId = deleteTarget.id;
-      setAdministrators(prev => prev.filter(a => a.id !== targetId));
-      logActivity('Administrator Removed', 'Admin', `Revoked administrative authority for ${deleteTarget.name} under CEO authorization.`);
-      showToast(`Removed administrator credentials: ${deleteTarget.name}`);
+      const targetAdmin = administrators.find(a => a.id === targetId);
+      const isCEO = targetAdmin && (targetAdmin.role.toLowerCase().includes('ceo') || targetAdmin.role.toLowerCase().includes('chief executive'));
+
+      const remainingAdmins = administrators.filter(a => a.id !== targetId);
+      let updatedAdmins = remainingAdmins;
+
+      if (remainingAdmins.length === 0) {
+        // Fallback root administrator so app never crashes
+        updatedAdmins = [{
+          id: 'adm-root',
+          adminId: 'RAQ-ADM-01',
+          fullName: 'RPM Executive Administrator',
+          role: 'Chief Executive Officer (CEO)' as AdminRole,
+          email: ADMIN_CONFIG.notificationEmail,
+          phone: '+44 161 792 4000',
+          avatarUrl: '/rpm_logo.jpg',
+          department: 'Executive Board',
+          accessLevel: 'Super Administrator',
+          lastActive: 'Active now',
+          status: 'Active',
+          orderIndex: 1,
+        }];
+        showToast('Administrator deleted. System maintained under root RPM Executive Administrator.');
+      } else if (isCEO && remainingAdmins.length > 0) {
+        // Automatically promote the first remaining administrator to Chief Executive Officer (CEO)
+        updatedAdmins = remainingAdmins.map((adm, idx) => {
+          if (idx === 0) {
+            return {
+              ...adm,
+              role: 'Chief Executive Officer (CEO)' as AdminRole,
+              orderIndex: 1,
+            };
+          }
+          return {
+            ...adm,
+            orderIndex: idx + 1,
+          };
+        });
+        showToast(`Administrator deleted. Leadership transferred to ${updatedAdmins[0].fullName} as Chief Executive Officer.`);
+      } else {
+        showToast(`Permanently deleted administrator: ${deleteTarget.name}`);
+      }
+
+      setAdministrators(updatedAdmins);
+      localStorage.setItem('raq_admins', JSON.stringify(updatedAdmins));
+
+      // Update active admin if the deleted admin was active
+      if (activeAdminId === targetId) {
+        const nextActiveId = updatedAdmins[0]?.id || '';
+        setActiveAdminId(nextActiveId);
+        localStorage.setItem('raq_active_admin_id', nextActiveId);
+      }
+
+      // Update staff registrar if the deleted admin was the staff registrar
+      if (clubSettings.staffRegistrarAdminId === targetId) {
+        const nextRegistrarId = updatedAdmins[0]?.id || '';
+        const newSettings = {
+          ...clubSettings,
+          staffRegistrarAdminId: nextRegistrarId,
+        };
+        setClubSettings(newSettings);
+        localStorage.setItem('raq_settings', JSON.stringify(newSettings));
+      }
+
+      logActivity('Administrator Removed', 'Admin', `Deleted administrator credentials for ${deleteTarget.name}.`);
     } else if (deleteTarget.type === 'staff') {
       const targetId = deleteTarget.id;
-      setStaffMembers(prev => prev.filter(s => s.id !== targetId));
-      logActivity('Staff Member Removed', 'Staff', `Removed staff member ${deleteTarget.name}.`);
-      showToast(`Removed staff member: ${deleteTarget.name}`);
+      const targetStaff = staffMembers.find(s => s.id === targetId);
+      const isCoach = targetStaff?.category === 'Coaching' || targetStaff?.role.toLowerCase().includes('coach');
+      setStaffMembers(prev => {
+        const updated = prev.filter(s => s.id !== targetId);
+        localStorage.setItem('raq_staff', JSON.stringify(updated));
+        return updated;
+      });
+      logActivity(isCoach ? 'Coach Removed' : 'Staff Member Removed', 'Staff', `Permanently removed ${isCoach ? 'coach' : 'staff member'} ${deleteTarget.name} from club records.`);
+      showToast(`Permanently deleted ${isCoach ? 'coach' : 'staff member'}: ${deleteTarget.name}`);
+    } else if (deleteTarget.type === 'staff_batch') {
+      const batchIds = deleteTarget.batchIds || [];
+      setStaffMembers(prev => {
+        const updated = prev.filter(s => !batchIds.includes(s.id));
+        localStorage.setItem('raq_staff', JSON.stringify(updated));
+        return updated;
+      });
+      logActivity('Multiple Staff Removed', 'Staff', `Permanently deleted ${batchIds.length} coaches & staff members from club records.`);
+      showToast(`Permanently deleted ${batchIds.length} coaches & staff members.`);
     }
 
     setIsDeleteModalOpen(false);
@@ -580,9 +726,16 @@ export default function App() {
         {currentTab === 'staff' && (
           <StaffSection
             staffMembers={staffMembers}
+            administrators={administrators}
+            activeAdmin={activeAdmin}
+            staffRegistrar={staffRegistrar}
+            isAdminLoggedIn={isAdminLoggedIn}
+            onOpenAdminLogin={() => setIsLoginModalOpen(true)}
+            onSwitchActiveAdmin={handleSwitchActiveAdmin}
             onAddStaff={handleAddStaff}
             onEditStaff={handleEditStaff}
             onDeleteStaff={handleRequestDeleteStaff}
+            onDeleteMultipleStaff={handleRequestDeleteMultipleStaff}
           />
         )}
 
@@ -664,6 +817,7 @@ export default function App() {
           onAddVideo={handleAddVideoToPlayer}
           onDeletePhoto={handleDeletePhotoFromPlayer}
           onDeleteVideo={handleDeleteVideoFromPlayer}
+          onUpdateCvDocument={handleUpdatePlayerCv}
         />
       )}
 
