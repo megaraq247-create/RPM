@@ -1,0 +1,6 @@
+{
+  "name": "RAQ PLAYER MANAGEMENT",
+  "description": "Comprehensive football player management system with player registrations, career CVs, photo & video media, coaches, staff, and club administration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
