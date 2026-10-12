@@ -17,7 +17,6 @@ import { AdminLoginModal } from './components/AdminLoginModal';
 import { RegistrationEmailModal } from './components/RegistrationEmailModal';
 import { ConfirmDeleteModal, DeleteTarget } from './components/ConfirmDeleteModal';
 import { ShareRegistrationModal } from './components/ShareRegistrationModal';
-import { GitHubConnectModal } from './components/GitHubConnectModal';
 import { 
   Player, 
   StaffMember, 
@@ -159,7 +158,6 @@ export default function App() {
   const [playerToEdit, setPlayerToEdit] = useState<Player | null>(null);
   const [selectedDossierPlayer, setSelectedDossierPlayer] = useState<Player | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
   const [isRegistrationViaSharedLink, setIsRegistrationViaSharedLink] = useState(false);
 
   // Auto-detect player registration URL param (e.g. ?register=player or #register)
@@ -736,7 +734,6 @@ export default function App() {
         isAdminLoggedIn={isAdminLoggedIn}
         onOpenAdminLogin={() => setIsLoginModalOpen(true)}
         onOpenShareLink={() => setIsShareModalOpen(true)}
-        onOpenGitHub={() => setIsGitHubModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -759,7 +756,6 @@ export default function App() {
               setActiveVideoPlayerName(playerName);
             }}
             onOpenShareLink={() => setIsShareModalOpen(true)}
-            onOpenGitHub={() => setIsGitHubModalOpen(true)}
           />
         )}
 
@@ -941,12 +937,6 @@ export default function App() {
           setIsRegisterModalOpen(true);
           setIsRegistrationViaSharedLink(true);
         }}
-      />
-
-      {/* MODAL 8: GitHub & Vercel Sync Modal */}
-      <GitHubConnectModal
-        isOpen={isGitHubModalOpen}
-        onClose={() => setIsGitHubModalOpen(false)}
       />
 
       {/* Quick Action Toast */}
