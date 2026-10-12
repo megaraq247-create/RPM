@@ -16,6 +16,8 @@ import { VideoPlayerModal } from './components/VideoPlayerModal';
 import { AdminLoginModal } from './components/AdminLoginModal';
 import { RegistrationEmailModal } from './components/RegistrationEmailModal';
 import { ConfirmDeleteModal, DeleteTarget } from './components/ConfirmDeleteModal';
+import { ShareRegistrationModal } from './components/ShareRegistrationModal';
+import { GitHubConnectModal } from './components/GitHubConnectModal';
 import { 
   Player, 
   StaffMember, 
@@ -156,6 +158,24 @@ export default function App() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [playerToEdit, setPlayerToEdit] = useState<Player | null>(null);
   const [selectedDossierPlayer, setSelectedDossierPlayer] = useState<Player | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isGitHubModalOpen, setIsGitHubModalOpen] = useState(false);
+  const [isRegistrationViaSharedLink, setIsRegistrationViaSharedLink] = useState(false);
+
+  // Auto-detect player registration URL param (e.g. ?register=player or #register)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const isRegisterAction = searchParams.get('register') === 'player' || 
+                               searchParams.get('register') === 'true' || 
+                               searchParams.get('action') === 'register' || 
+                               window.location.hash === '#register';
+      if (isRegisterAction) {
+        setIsRegisterModalOpen(true);
+        setIsRegistrationViaSharedLink(true);
+      }
+    }
+  }, []);
   
   // Video player modal
   const [activeVideo, setActiveVideo] = useState<PlayerMediaVideo | null>(null);
@@ -290,6 +310,11 @@ export default function App() {
   };
 
   const handleRequestDeletePlayer = (playerId: string) => {
+    if (!isAdminLoggedIn) {
+      showToast('Administrator Access Required: Only administrator "RPM" can delete player records.');
+      setIsLoginModalOpen(true);
+      return;
+    }
     const target = players.find(p => p.id === playerId);
     if (!target) return;
     setDeleteTarget({
@@ -321,6 +346,11 @@ export default function App() {
   };
 
   const handleDeletePhotoFromPlayer = (playerId: string, photoId: string) => {
+    if (!isAdminLoggedIn) {
+      showToast('Administrator Access Required: Only administrator "RPM" can delete player photos.');
+      setIsLoginModalOpen(true);
+      return;
+    }
     setPlayers(prev => prev.map(p => {
       if (p.id === playerId) {
         return {
@@ -351,6 +381,11 @@ export default function App() {
   };
 
   const handleDeleteVideoFromPlayer = (playerId: string, videoId: string) => {
+    if (!isAdminLoggedIn) {
+      showToast('Administrator Access Required: Only administrator "RPM" can delete video highlights.');
+      setIsLoginModalOpen(true);
+      return;
+    }
     setPlayers(prev => prev.map(p => {
       if (p.id === playerId) {
         return {
@@ -398,6 +433,11 @@ export default function App() {
   };
 
   const handleRequestDeleteStaff = (staffId: string) => {
+    if (!isAdminLoggedIn) {
+      showToast('Administrator Access Required: Only administrator "RPM" can delete coaches or staff.');
+      setIsLoginModalOpen(true);
+      return;
+    }
     const target = staffMembers.find(s => s.id === staffId);
     if (!target) return;
     const isCoach = target.category === 'Coaching' || target.role.toLowerCase().includes('coach');
@@ -417,6 +457,11 @@ export default function App() {
 
   const handleRequestDeleteMultipleStaff = (staffIds: string[]) => {
     if (staffIds.length === 0) return;
+    if (!isAdminLoggedIn) {
+      showToast('Administrator Access Required: Only administrator "RPM" can delete coaches or staff.');
+      setIsLoginModalOpen(true);
+      return;
+    }
     if (staffIds.length === 1) {
       handleRequestDeleteStaff(staffIds[0]);
       return;
@@ -452,6 +497,11 @@ export default function App() {
   };
 
   const handleRequestDeleteAdmin = (adminId: string) => {
+    if (!isAdminLoggedIn) {
+      showToast('Administrator Access Required: Only administrator "RPM" can delete administrators.');
+      setIsLoginModalOpen(true);
+      return;
+    }
     const target = administrators.find(a => a.id === adminId);
     if (!target) return;
     const isCEO = target.role.toLowerCase().includes('ceo') || target.role.toLowerCase().includes('chief executive');
@@ -481,6 +531,11 @@ export default function App() {
 
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
+    if (!isAdminLoggedIn) {
+      showToast('Access Denied: Only administrator "RPM" is authorized to delete club data.');
+      setIsLoginModalOpen(true);
+      return;
+    }
 
     if (deleteTarget.type === 'player') {
       const targetId = deleteTarget.id;
@@ -669,6 +724,7 @@ export default function App() {
         onOpenPlayerRegister={() => {
           setPlayerToEdit(null);
           setIsRegisterModalOpen(true);
+          setIsRegistrationViaSharedLink(false);
         }}
         onOpenStaffAdd={() => {
           setCurrentTab('staff');
@@ -679,6 +735,8 @@ export default function App() {
         totalPlayers={players.length}
         isAdminLoggedIn={isAdminLoggedIn}
         onOpenAdminLogin={() => setIsLoginModalOpen(true)}
+        onOpenShareLink={() => setIsShareModalOpen(true)}
+        onOpenGitHub={() => setIsGitHubModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -693,12 +751,15 @@ export default function App() {
             onOpenRegister={() => {
               setPlayerToEdit(null);
               setIsRegisterModalOpen(true);
+              setIsRegistrationViaSharedLink(false);
             }}
             onViewPlayer={(p) => setSelectedDossierPlayer(p)}
             onOpenVideo={(video, playerName) => {
               setActiveVideo(video);
               setActiveVideoPlayerName(playerName);
             }}
+            onOpenShareLink={() => setIsShareModalOpen(true)}
+            onOpenGitHub={() => setIsGitHubModalOpen(true)}
           />
         )}
 
@@ -710,6 +771,7 @@ export default function App() {
             onEdit={(p) => {
               setPlayerToEdit(p);
               setIsRegisterModalOpen(true);
+              setIsRegistrationViaSharedLink(false);
             }}
             onDelete={handleRequestDeletePlayer}
             onOpenVideo={(video, playerName) => {
@@ -719,7 +781,10 @@ export default function App() {
             onRegisterPlayer={() => {
               setPlayerToEdit(null);
               setIsRegisterModalOpen(true);
+              setIsRegistrationViaSharedLink(false);
             }}
+            isAdminLoggedIn={isAdminLoggedIn}
+            onOpenShareLink={() => setIsShareModalOpen(true)}
           />
         )}
 
@@ -794,7 +859,9 @@ export default function App() {
           onClose={() => {
             setIsRegisterModalOpen(false);
             setPlayerToEdit(null);
+            setIsRegistrationViaSharedLink(false);
           }}
+          isSharedLinkInvite={isRegistrationViaSharedLink}
         />
       )}
 
@@ -807,6 +874,7 @@ export default function App() {
             setSelectedDossierPlayer(null);
             setPlayerToEdit(p);
             setIsRegisterModalOpen(true);
+            setIsRegistrationViaSharedLink(false);
           }}
           onDeletePlayer={(playerId) => handleRequestDeletePlayer(playerId)}
           onOpenVideo={(video, playerName) => {
@@ -818,6 +886,7 @@ export default function App() {
           onDeletePhoto={handleDeletePhotoFromPlayer}
           onDeleteVideo={handleDeleteVideoFromPlayer}
           onUpdateCvDocument={handleUpdatePlayerCv}
+          isAdminLoggedIn={isAdminLoggedIn}
         />
       )}
 
@@ -861,6 +930,23 @@ export default function App() {
           setIsDeleteModalOpen(false);
           setDeleteTarget(null);
         }}
+      />
+
+      {/* MODAL 7: Share Player Registration Short Link Modal */}
+      <ShareRegistrationModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        onOpenRegisterModal={() => {
+          setPlayerToEdit(null);
+          setIsRegisterModalOpen(true);
+          setIsRegistrationViaSharedLink(true);
+        }}
+      />
+
+      {/* MODAL 8: GitHub & Vercel Sync Modal */}
+      <GitHubConnectModal
+        isOpen={isGitHubModalOpen}
+        onClose={() => setIsGitHubModalOpen(false)}
       />
 
       {/* Quick Action Toast */}

@@ -38,6 +38,7 @@ interface PlayerRegistrationModalProps {
   playerToEdit?: Player | null;
   onSave: (player: Player) => void;
   onClose: () => void;
+  isSharedLinkInvite?: boolean;
 }
 
 const POSITIONS: Position[] = [
@@ -58,6 +59,7 @@ export const PlayerRegistrationModal: React.FC<PlayerRegistrationModalProps> = (
   playerToEdit,
   onSave,
   onClose,
+  isSharedLinkInvite = false,
 }) => {
   const [step, setStep] = useState<'profile' | 'contract' | 'cv' | 'attributes' | 'media'>('profile');
 
@@ -520,6 +522,25 @@ export const PlayerRegistrationModal: React.FC<PlayerRegistrationModalProps> = (
 
         {/* Wizard Form Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Invited Player Notice Banner */}
+          {isSharedLinkInvite && (
+            <div className="p-3.5 bg-emerald-950/40 border border-emerald-500/40 rounded-xl flex items-start gap-3 text-xs shadow-lg animate-fade-in">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                <UserPlus className="w-4 h-4" />
+              </div>
+              <div className="space-y-1">
+                <div className="font-bold text-white flex items-center gap-2">
+                  <span>Welcome to RPM App Player Registration Portal</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Registration Link
+                  </span>
+                </div>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  Please complete your player profile, contact info, and upload your official CV directly from your computer or phone in <strong className="text-emerald-300">Step 3 (Career CV & Honours)</strong>. Your submission will be recorded securely in RPM App records.
+                </p>
+              </div>
+            </div>
+          )}
           
           {/* STEP 1: PLAYER PROFILE */}
           {step === 'profile' && (

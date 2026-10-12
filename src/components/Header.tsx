@@ -13,7 +13,10 @@ import {
   Trophy,
   Lock,
   Unlock,
-  CheckCircle2
+  CheckCircle2,
+  Share2,
+  Link2,
+  GitBranch
 } from 'lucide-react';
 import { ClubSettings } from '../types';
 
@@ -31,6 +34,8 @@ interface HeaderProps {
   totalPlayers: number;
   isAdminLoggedIn: boolean;
   onOpenAdminLogin: () => void;
+  onOpenShareLink: () => void;
+  onOpenGitHub: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -47,6 +52,8 @@ export const Header: React.FC<HeaderProps> = ({
   totalPlayers,
   isAdminLoggedIn,
   onOpenAdminLogin,
+  onOpenShareLink,
+  onOpenGitHub,
 }) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -71,13 +78,13 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-lg font-extrabold tracking-tight text-white flex items-center gap-1.5">
-                  RAQ <span className="text-amber-400 font-semibold tracking-normal">PLAYER MANAGEMENT</span>
-                  <span className="text-xs font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                    RPM
+                  RPM <span className="text-amber-400 font-extrabold tracking-normal">App</span>
+                  <span className="text-xs font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    Official
                   </span>
                 </span>
-                <span className="text-[10px] uppercase font-mono tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  {clubSettings.currentSeason}
+                <span className="text-[10px] uppercase font-mono tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 hidden sm:inline">
+                  RAQ Player Management
                 </span>
               </div>
               <div className="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
@@ -91,13 +98,13 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Quick Search & Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Search input */}
-            <div className="relative hidden md:block w-64 lg:w-72">
+            <div className="relative hidden md:block w-48 lg:w-60">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search player, coach, position..."
+                placeholder="Search players, coaches..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/40 transition-colors"
@@ -112,13 +119,37 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
+            {/* Share Player Registration Short Link button */}
+            <button
+              onClick={onOpenShareLink}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-95"
+              title="Generate short registration link to send to players"
+            >
+              <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Share Link</span>
+              <span className="sm:hidden">Share</span>
+            </button>
+
+            {/* GitHub & Vercel Sync button */}
+            <button
+              onClick={onOpenGitHub}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold transition-all cursor-pointer active:scale-95"
+              title="Sync repository with GitHub and update Vercel deployment"
+            >
+              <svg className="w-3.5 h-3.5 fill-current text-white shrink-0" viewBox="0 0 24 24">
+                <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+              </svg>
+              <span className="hidden md:inline">GitHub / Vercel</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            </button>
+
             {/* Fast Register Player button */}
             <button
               onClick={onOpenPlayerRegister}
-              className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs px-3.5 py-2 rounded-lg transition-all shadow-md shadow-emerald-500/10 active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg transition-all shadow-md shadow-emerald-500/10 active:scale-95 cursor-pointer"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Register Player</span>
+              <span className="hidden sm:inline">Register Player</span>
             </button>
 
             {/* Admin Security Login / Status badge */}
