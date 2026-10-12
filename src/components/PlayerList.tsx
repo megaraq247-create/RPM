@@ -12,7 +12,9 @@ import {
   Edit3, 
   Trash2,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Lock,
+  Share2
 } from 'lucide-react';
 import { Player, Position, SquadCategory, PlayerStatus } from '../types';
 import { PlayerCard } from './PlayerCard';
@@ -26,6 +28,8 @@ interface PlayerListProps {
   onDelete: (playerId: string) => void;
   onOpenVideo: (video: Player['videos'][0], playerName: string) => void;
   onRegisterPlayer: () => void;
+  isAdminLoggedIn?: boolean;
+  onOpenShareLink?: () => void;
 }
 
 export const PlayerList: React.FC<PlayerListProps> = ({
@@ -36,6 +40,8 @@ export const PlayerList: React.FC<PlayerListProps> = ({
   onDelete,
   onOpenVideo,
   onRegisterPlayer,
+  isAdminLoggedIn = false,
+  onOpenShareLink,
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [selectedSquad, setSelectedSquad] = useState<string>('All');
@@ -225,6 +231,7 @@ export const PlayerList: React.FC<PlayerListProps> = ({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onOpenVideo={onOpenVideo}
+                isAdminLoggedIn={isAdminLoggedIn}
               />
             ))}
           </div>
@@ -323,13 +330,23 @@ export const PlayerList: React.FC<PlayerListProps> = ({
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              onClick={() => onDelete(player.id)}
-                              className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
-                              title="Delete Player Details"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {isAdminLoggedIn ? (
+                              <button
+                                onClick={() => onDelete(player.id)}
+                                className="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
+                                title="Delete Player Details"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => onDelete(player.id)}
+                                className="p-1 text-slate-600 hover:text-amber-400 hover:bg-amber-500/10 rounded transition-colors cursor-pointer"
+                                title="Administrator Only: Only administrator 'RPM' can delete player records"
+                              >
+                                <Lock className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

@@ -27,7 +27,8 @@ import {
   Upload,
   Download,
   FileText,
-  Edit3
+  Edit3,
+  Lock
 } from 'lucide-react';
 import { Player, PlayerMediaPhoto, PlayerMediaVideo, PlayerCvDocument } from '../types';
 import { formatCurrency, calculateAge, getPositionColor, getStatusBadge } from '../utils/helpers';
@@ -43,6 +44,7 @@ interface PlayerDossierModalProps {
   onDeletePhoto: (playerId: string, photoId: string) => void;
   onDeleteVideo: (playerId: string, videoId: string) => void;
   onUpdateCvDocument?: (playerId: string, cvDoc: PlayerCvDocument, newBio?: string) => void;
+  isAdminLoggedIn?: boolean;
 }
 
 export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
@@ -56,6 +58,7 @@ export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
   onDeletePhoto,
   onDeleteVideo,
   onUpdateCvDocument,
+  isAdminLoggedIn = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'cv' | 'media' | 'attributes' | 'medical'>('cv');
   const [newPhotoUrl, setNewPhotoUrl] = useState('');
@@ -265,14 +268,25 @@ export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
               <span>Edit Details</span>
             </button>
             {onDeletePlayer && (
-              <button
-                onClick={() => onDeletePlayer(player.id)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-medium transition-colors cursor-pointer"
-                title="Permanently delete player record"
-              >
-                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                <span className="hidden sm:inline">Delete Player</span>
-              </button>
+              isAdminLoggedIn ? (
+                <button
+                  onClick={() => onDeletePlayer(player.id)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-medium transition-colors cursor-pointer"
+                  title="Permanently delete player record"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  <span className="hidden sm:inline">Delete Player</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => onDeletePlayer(player.id)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-500 hover:text-amber-300 text-xs font-medium transition-colors cursor-pointer"
+                  title="Administrator Only: Only administrator 'RPM' can delete player records"
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-500/60" />
+                  <span className="hidden sm:inline">Delete (Admin Only)</span>
+                </button>
+              )
             )}
             <button
               onClick={onClose}
@@ -758,13 +772,15 @@ export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
                           <div className="flex justify-end">
-                            <button
-                              onClick={() => onDeletePhoto(player.id, photo.id)}
-                              className="p-1 rounded bg-rose-600/80 hover:bg-rose-600 text-white transition-colors cursor-pointer"
-                              title="Delete photo"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                            {isAdminLoggedIn && (
+                              <button
+                                onClick={() => onDeletePhoto(player.id, photo.id)}
+                                className="p-1 rounded bg-rose-600/80 hover:bg-rose-600 text-white transition-colors cursor-pointer"
+                                title="Delete photo"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
                           </div>
                           <div>
                             <span className="text-[10px] font-mono text-emerald-400 uppercase">{photo.tag}</span>
@@ -907,13 +923,15 @@ export const PlayerDossierModal: React.FC<PlayerDossierModalProps> = ({
                             </div>
                           </div>
 
-                          <button
-                            onClick={() => onDeleteVideo(player.id, vid.id)}
-                            className="p-1.5 text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
-                            title="Delete video link"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {isAdminLoggedIn && (
+                            <button
+                              onClick={() => onDeleteVideo(player.id, vid.id)}
+                              className="p-1.5 text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                              title="Delete video link"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
 
                         {vid.notes && (

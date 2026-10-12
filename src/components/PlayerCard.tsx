@@ -8,7 +8,8 @@ import {
   ChevronRight,
   Shield,
   Activity,
-  Calendar
+  Calendar,
+  Lock
 } from 'lucide-react';
 import { Player } from '../types';
 import { formatCurrency, calculateAge, getPositionColor, getStatusBadge } from '../utils/helpers';
@@ -19,6 +20,7 @@ interface PlayerCardProps {
   onEdit: (player: Player) => void;
   onDelete: (playerId: string) => void;
   onOpenVideo: (video: Player['videos'][0], playerName: string) => void;
+  isAdminLoggedIn?: boolean;
 }
 
 export const PlayerCard: React.FC<PlayerCardProps> = ({
@@ -27,6 +29,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
   onEdit,
   onDelete,
   onOpenVideo,
+  isAdminLoggedIn = false,
 }) => {
   const posStyle = getPositionColor(player.primaryPosition);
   const statusInfo = getStatusBadge(player.status);
@@ -182,13 +185,23 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={() => onDelete(player.id)}
-            title="Delete player details from club roster"
-            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/15 rounded-lg transition-colors cursor-pointer"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {isAdminLoggedIn ? (
+            <button
+              onClick={() => onDelete(player.id)}
+              title="Delete player details from club roster"
+              className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/15 rounded-lg transition-colors cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={() => onDelete(player.id)}
+              title="Administrator Only: Only administrator 'RPM' can delete player records"
+              className="p-2 text-slate-600 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors cursor-pointer"
+            >
+              <Lock className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

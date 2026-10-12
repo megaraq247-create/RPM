@@ -212,6 +212,10 @@ export const StaffSection: React.FC<StaffSectionProps> = ({
 
   const handleBatchDelete = () => {
     if (selectedIds.length === 0) return;
+    if (!isAuthorizedRegistrar) {
+      if (onOpenAdminLogin) onOpenAdminLogin();
+      return;
+    }
     if (onDeleteMultipleStaff) {
       onDeleteMultipleStaff(selectedIds);
     } else {
@@ -529,16 +533,29 @@ export const StaffSection: React.FC<StaffSectionProps> = ({
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
                         {staff.staffId}
                       </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteStaff(staff.id);
-                        }}
-                        className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/15 transition-colors cursor-pointer"
-                        title={coachRole ? `Delete coach ${staff.fullName}` : `Delete staff member ${staff.fullName}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {isAuthorizedRegistrar ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteStaff(staff.id);
+                          }}
+                          className="p-1 rounded-md text-slate-500 hover:text-rose-400 hover:bg-rose-500/15 transition-colors cursor-pointer"
+                          title={coachRole ? `Delete coach ${staff.fullName}` : `Delete staff member ${staff.fullName}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onOpenAdminLogin) onOpenAdminLogin();
+                          }}
+                          className="p-1 rounded-md text-slate-600 hover:text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                          title="Administrator Only: Only administrator 'RPM' can delete coaches and staff"
+                        >
+                          <Lock className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -637,17 +654,31 @@ export const StaffSection: React.FC<StaffSectionProps> = ({
                       <Edit3 className="w-3.5 h-3.5" />
                       <span>Edit</span>
                     </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteStaff(staff.id);
-                      }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-rose-300 bg-rose-500/20 hover:bg-rose-600 hover:text-white border border-rose-500/40 rounded-lg transition-colors cursor-pointer text-xs font-bold shadow-sm active:scale-95"
-                      title={coachRole ? `Delete coach ${staff.fullName} from club records` : `Delete staff member from club records`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-rose-400 group-hover:text-white" />
-                      <span>{coachRole ? 'Delete Coach' : 'Delete Staff'}</span>
-                    </button>
+                    {isAuthorizedRegistrar ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteStaff(staff.id);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-rose-300 bg-rose-500/20 hover:bg-rose-600 hover:text-white border border-rose-500/40 rounded-lg transition-colors cursor-pointer text-xs font-bold shadow-sm active:scale-95"
+                        title={coachRole ? `Delete coach ${staff.fullName} from club records` : `Delete staff member from club records`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-400 group-hover:text-white" />
+                        <span>{coachRole ? 'Delete Coach' : 'Delete Staff'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onOpenAdminLogin) onOpenAdminLogin();
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-slate-500 bg-slate-900 border border-slate-800 rounded-lg hover:text-amber-400 transition-colors cursor-pointer text-xs font-medium"
+                        title="Administrator Only: Only administrator 'RPM' can delete coaches and staff"
+                      >
+                        <Lock className="w-3.5 h-3.5" />
+                        <span>Admin Only</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -751,14 +782,26 @@ export const StaffSection: React.FC<StaffSectionProps> = ({
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => onDeleteStaff(staff.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded text-xs font-bold transition-colors cursor-pointer active:scale-95"
-                            title={coachRole ? `Delete coach ${staff.fullName}` : `Delete staff member ${staff.fullName}`}
-                          >
-                            <Trash2 className="w-3 h-3 text-rose-400 group-hover:text-white" />
-                            <span>{coachRole ? 'Delete Coach' : 'Delete'}</span>
-                          </button>
+                          {isAuthorizedRegistrar ? (
+                            <button
+                              onClick={() => onDeleteStaff(staff.id)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-500/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 rounded text-xs font-bold transition-colors cursor-pointer active:scale-95"
+                              title={coachRole ? `Delete coach ${staff.fullName}` : `Delete staff member ${staff.fullName}`}
+                            >
+                              <Trash2 className="w-3 h-3 text-rose-400 group-hover:text-white" />
+                              <span>{coachRole ? 'Delete Coach' : 'Delete'}</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                if (onOpenAdminLogin) onOpenAdminLogin();
+                              }}
+                              className="p-1 text-slate-600 hover:text-amber-400 transition-colors cursor-pointer"
+                              title="Administrator Only: Only administrator 'RPM' can delete coaches and staff"
+                            >
+                              <Lock className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
